@@ -1,0 +1,1 @@
+But we have to make sure that we are ready to take a single action in the next similar case.

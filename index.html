@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Speech Prosody Modeling: A Task-Agnostic Approach</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-hover: #22222e;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-tertiary: #a5b4fc;
+            --accent-warm: #f59e0b;
+            --accent-warm-light: #fbbf24;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+            --border-accent: #3d3d4a;
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            --shadow-glow: 0 0 60px rgba(99, 102, 241, 0.15);
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 17px;
+            min-height: 100vh;
+        }
+
+        /* Noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            z-index: 1000;
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            padding: 80px 0 60px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(2%, 2%) rotate(1deg); }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--gradient-primary);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        h1 {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: clamp(2.2rem, 4vw, 3.2rem);
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--text-primary);
+            margin-bottom: 32px;
+            letter-spacing: -0.02em;
+        }
+
+        .authors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 24px;
+            margin-bottom: 24px;
+        }
+
+        .author {
+            font-size: 17px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .affiliations {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        /* Code Release Banner */
+        .code-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-top: 32px;
+        }
+
+        .code-banner svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent-warm);
+            flex-shrink: 0;
+        }
+
+        .code-banner p {
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        .code-banner strong {
+            color: var(--accent-warm-light);
+        }
+
+        /* Sections */
+        section {
+            padding: 80px 0;
+        }
+
+        section:nth-child(even) {
+            background: var(--bg-secondary);
+        }
+
+        .section-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--accent-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 32px;
+            letter-spacing: -0.01em;
+        }
+
+        h3 {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        /* Abstract */
+        .abstract-content {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 19px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            text-align: justify;
+            hyphens: auto;
+        }
+
+        /* Figures */
+        .figure-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 40px;
+            box-shadow: var(--shadow-card);
+            transition: border-color 0.3s ease;
+        }
+
+        .figure-container:hover {
+            border-color: var(--border-accent);
+        }
+
+        .figure-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .figure-caption {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .figure-caption strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Two column figures */
+        .figures-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+
+        @media (max-width: 900px) {
+            .figures-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Audio Samples */
+        .sample-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .sample-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-primary);
+            margin-bottom: 12px;
+        }
+
+        .sample-text {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 20px;
+            font-style: italic;
+            color: var(--text-primary);
+            margin-bottom: 28px;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border-left: 3px solid var(--accent-primary);
+            border-radius: 0 12px 12px 0;
+        }
+
+        .audio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .audio-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .audio-item:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-hover);
+        }
+
+        .audio-item.ground-truth {
+            border-color: var(--accent-warm);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .audio-item.ours {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .audio-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-item.ground-truth .audio-label {
+            color: var(--accent-warm);
+        }
+
+        .audio-item.ours .audio-label {
+            color: var(--accent-secondary);
+        }
+
+        .audio-label .tag {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .audio-item.ours .tag {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+        }
+
+        audio::-webkit-media-controls-panel {
+            background: var(--bg-primary);
+        }
+
+        /* Long-form prose blocks (analysis & results text) */
+        .supp-content {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .supp-content p {
+            margin-bottom: 20px;
+        }
+
+        .supp-content strong {
+            color: var(--text-primary);
+        }
+
+        /* Analysis figures grid */
+        .supp-figures {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        @media (max-width: 900px) {
+            .supp-figures {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .supp-figure {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .supp-figure:hover {
+            border-color: var(--border-accent);
+        }
+
+        .supp-figure img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: #ffffff;
+            margin-bottom: 16px;
+        }
+
+        .supp-figure-caption {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .supp-figure-caption strong {
+            color: var(--text-secondary);
+        }
+
+        /* Methodology Box */
+        .methodology-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-bottom: 48px;
+        }
+
+        .methodology-box h3 {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--accent-secondary);
+            margin-bottom: 16px;
+        }
+
+        .methodology-box p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* Dataset Section Headers */
+        .dataset-section {
+            margin-bottom: 32px;
+        }
+
+        .dataset-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dataset-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .dataset-badge.voxpopuli {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .dataset-badge.gigaspeech {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .dataset-count {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        footer p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--accent-secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 24px;
+            }
+
+            section {
+                padding: 60px 0;
+            }
+
+            .hero {
+                padding: 60px 0 40px;
+            }
+
+            .audio-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sample-text {
+                font-size: 17px;
+                padding: 16px 20px;
+            }
+        }
+
+        /* Scroll animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container">
+            <div class="badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                Submitted to Speech Communication (Elsevier)
+            </div>
+            
+            <h1>Comprehensive Speech Prosody Modeling: A Task-Agnostic Approach</h1>
+            
+            <div class="authors">
+                <span class="author">Eray Eren</span>
+                <span class="author">Qingju Liu</span>
+                <span class="author">Hyeongwoo Kim</span>
+                <span class="author">Pablo Garrido</span>
+                <span class="author">Abeer Alwan</span>
+            </div>
+            
+            <div class="affiliations">
+                UCLA Department of Electrical and Computer Engineering · Imperial College London · Flawless AI
+            </div>
+
+            <div class="code-banner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                </svg>
+                <p><strong>Code coming soon!</strong> Our implementation will be publicly released upon paper acceptance.</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Abstract -->
+    <section>
+        <div class="container">
+            <span class="section-label">Abstract</span>
+            <div class="abstract-content fade-in">
+                <p>Currently, there is no standalone speech prosody model that can be flexibly integrated into various downstream speech tasks, such as text-to-speech (TTS) synthesis, and that also offers explicit control over pitch, energy, and phoneme duration. An explicit prosody modeling framework that bridges this gap is presented, employing a Perceiver I/O architecture as the backbone to accommodate varying lengths of speech signals. A hybrid regression and flow-matching strategy is proposed to handle the trade-off between deterministic and probabilistic duration estimation, respectively. Temporal alignment is enforced across all cross-attention layers via a soft alignment loss and summary rotary positional embeddings. The proposed model is pre-trained on the GigaSpeech corpus and benchmarked against competitive baselines, namely StyleTTS2 and FluentSpeech. Performance is evaluated on GigaSpeech and VoxPopuli using prosodic metrics at multiple levels of granularity. The proposed prosody model is validated in a downstream TTS task, and perceptual listening tests are conducted. For both pre-training and TTS objectives, the proposed model outperforms existing baselines in objective and subjective evaluations. Furthermore, it is demonstrated that the fusion of prosodic features from the proposed model with existing state-of-the-art models improves two additional downstream tasks: word prominence and emotion recognition.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Method -->
+    <section>
+        <div class="container">
+            <span class="section-label">Method</span>
+            <h2>Architecture Overview</h2>
+
+            <div class="figure-container fade-in">
+                <img src="figures/figure1.png" alt="Proposed prosody modeling framework architecture">
+                <p class="figure-caption"><strong>Fig. 1:</strong> Proposed prosody modeling framework, comprising a Prosody Input module, a Perceiver I/O&ndash;based Prosody Encoder, an F0 and Energy Decoder, and a hybrid Duration Decoder that integrates both regression and flow-matching components. The overall architecture follows ProMode. However, a new Duration Decoder (top right block) is included and the cross-attention layers are modified (highlighted in orange). At test time, the outputs of the two duration prediction heads are interpolated. Q and K denote query and key, respectively.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Prosody Pre-training Results -->
+    <section>
+        <div class="container">
+            <span class="section-label">Results</span>
+            <h2>Prosody Pre-training</h2>
+
+            <div class="supp-content fade-in">
+                <p><strong>Hybrid duration decoder.</strong> The duration head interpolates a regression decoder and a flow-matching decoder with weights &lambda;<sub>r</sub> and &lambda;<sub>f</sub> (&lambda;<sub>r</sub>&nbsp;+&nbsp;&lambda;<sub>f</sub>&nbsp;=&nbsp;1). At the selected operating point (&lambda;<sub>r</sub>&nbsp;=&nbsp;0.1, &lambda;<sub>f</sub>&nbsp;=&nbsp;0.9) the model attains significantly lower consonant and vowel KS than the regression-only ablation on both corpora (1.6&ndash;2.4&times; lower, <em>p</em>&nbsp;&lt;&nbsp;0.05, Benjamini&ndash;Hochberg corrected) and is indistinguishable from the flow-only ablation, i.e., the hybrid keeps the distributional fidelity of the flow decoder while retaining a deterministic component.</p>
+            </div>
+
+            <div class="figure-container fade-in">
+                <img src="figures/figure2.png" alt="KS statistic as a function of the duration decoder interpolation weights">
+                <p class="figure-caption"><strong>Fig. 2:</strong> Distributional comparisons on VoxPopuli test (top) and GigaSpeech dev (bottom) sets for consonant durations (left) and vowel durations (right) as a function of the duration decoder interpolation weights (&lambda;<sub>r</sub> for the regression decoder, &lambda;<sub>f</sub> for the flow decoder, with &lambda;<sub>r</sub>&nbsp;+&nbsp;&lambda;<sub>f</sub>&nbsp;=&nbsp;1). The Kolmogorov&ndash;Smirnov (KS) statistics (lower is better) to the ground-truth durations are reported for each plot. Dashed (without the duration flow decoder) and dotted (without the duration regression decoder) lines mark the two duration decoder ablations. The circled marker indicates the selected interpolation weights (&lambda;<sub>r</sub>&nbsp;=&nbsp;0.1, &lambda;<sub>f</sub>&nbsp;=&nbsp;0.9) used in the main results. Bands are 95% CIs from a paired bootstrap over utterances (10,000 resamples).</p>
+            </div>
+
+            <div class="supp-content fade-in">
+                <p><strong>Distributional match.</strong> Point-wise metrics such as MAE favor mean-regressing predictions and cannot detect whether a model preserves the spread and heavy tails of natural prosody, so the two-sample KS statistic is reported over the full empirical CDF. FluentSpeech and StyleTTS2 fail to capture the variance of these distributions. The proposed model produces distributions closer to the ground truth and achieves relative KS improvements of <strong>61%</strong> and <strong>68%</strong> for vowel and consonant durations, respectively, and <strong>58%</strong> for F0, over the strongest baseline in each case.</p>
+            </div>
+
+            <div class="figure-container fade-in">
+                <img src="figures/figure8a.png" alt="Distributional comparison on VoxPopuli, FluentSpeech">
+                <img src="figures/figure8b.png" alt="Distributional comparison on VoxPopuli, StyleTTS2">
+                <img src="figures/figure8c.png" alt="Distributional comparison on VoxPopuli, proposed model">
+                <p class="figure-caption"><strong>Fig. 8:</strong> Distributional comparison on VoxPopuli for vowel/consonant durations (left two columns) and F0 (right column), between FluentSpeech (top), StyleTTS2 (middle), and the proposed model (bottom). The KS statistic (lower is better) to the ground truth is reported for each plot. Each histogram is normalized to unit area.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Audio Samples -->
+    <section>
+        <div class="container">
+            <span class="section-label">Listening Examples</span>
+            <h2>Audio Samples Comparison</h2>
+            
+            <!-- Methodology Explanation -->
+            <div class="methodology-box fade-in">
+                <h3>Evaluation Protocol</h3>
+                <p>A downstream TTS task is evaluated by integrating the proposed prosody model with a retrained FluentSpeech. At test time, the first half (context) of an utterance is used as an audio prompt, and prosody is predicted for the second-half (masked) transcript, replacing FluentSpeech's built-in duration and F0 prediction. Synthesis is then performed with a FluentSpeech model retrained on GigaSpeech-XL (FluentSpeech-Up) and a pre-trained BigVGAN vocoder. The same protocol is applied to all baselines. The samples below are the stimuli used in the ABX listening tests; the full survey protocol&mdash;consent statement, Prolific prescreening criteria, attention checks and exclusion procedure, listener instructions, and survey interface&mdash;is documented in the supplementary material of the manuscript.</p>
+            </div>
+
+            <!-- VoxPopuli-En Section -->
+            <div class="dataset-section fade-in">
+                <div class="dataset-header">
+                    <span class="dataset-badge voxpopuli">VoxPopuli-En</span>
+                    <span class="dataset-count"></span>
+                </div>
+            </div>
+            
+            <!-- VoxPopuli Sample 1 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 01</div>
+                <div class="sample-text">"Is truly the assumption of their common humanity."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20090506-0900-PLENARY-15-en_20090506-22:00:22_7.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20090506-0900-PLENARY-15-en_20090506-22:00:22_7.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20090506-0900-PLENARY-15-en_20090506-22:00:22_7.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20090506-0900-PLENARY-15-en_20090506-22:00:22_7.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20090506-0900-PLENARY-15-en_20090506-22:00:22_7.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VoxPopuli Sample 2 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 02</div>
+                <div class="sample-text">"But we have to make sure that we are ready to take a single action in the next similar case."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20110310-0900-PLENARY-5-en_20110310-10:53:26_1.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20110310-0900-PLENARY-5-en_20110310-10:53:26_1.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20110310-0900-PLENARY-5-en_20110310-10:53:26_1.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20110310-0900-PLENARY-5-en_20110310-10:53:26_1.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20110310-0900-PLENARY-5-en_20110310-10:53:26_1.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VoxPopuli Sample 3 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 03</div>
+                <div class="sample-text">"I was talking about legislative proposals."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20120613-0900-PLENARY-4-en_20120613-11:05:07_0.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20120613-0900-PLENARY-4-en_20120613-11:05:07_0.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20120613-0900-PLENARY-4-en_20120613-11:05:07_0.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20120613-0900-PLENARY-4-en_20120613-11:05:07_0.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20120613-0900-PLENARY-4-en_20120613-11:05:07_0.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VoxPopuli Sample 4 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 04</div>
+                <div class="sample-text">"Sharing information about firearms trafficking and terrorist financing and learning from our previous mistakes."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20150311-0900-PLENARY-15-en_20150311-22:23:23_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20150311-0900-PLENARY-15-en_20150311-22:23:23_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20150311-0900-PLENARY-15-en_20150311-22:23:23_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20150311-0900-PLENARY-15-en_20150311-22:23:23_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20150311-0900-PLENARY-15-en_20150311-22:23:23_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VoxPopuli Sample 5 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 05</div>
+                <div class="sample-text">"Sometimes also very selfish behaviour of the member states."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20200914-0900-PLENARY-en_20200914-20:35:21_8.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20200914-0900-PLENARY-en_20200914-20:35:21_8.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20200914-0900-PLENARY-en_20200914-20:35:21_8.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20200914-0900-PLENARY-en_20200914-20:35:21_8.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20200914-0900-PLENARY-en_20200914-20:35:21_8.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VoxPopuli Sample 6 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 06</div>
+                <div class="sample-text">"Government that is able to tackle the immediate crisis."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20200915-0900-PLENARY-en_20200915-12:22:46_3.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20200915-0900-PLENARY-en_20200915-12:22:46_3.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20200915-0900-PLENARY-en_20200915-12:22:46_3.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20200915-0900-PLENARY-en_20200915-12:22:46_3.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20200915-0900-PLENARY-en_20200915-12:22:46_3.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VoxPopuli Sample 7 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 07</div>
+                <div class="sample-text">"I urge the European Council to hold firm in rejecting British provocations, in asserting international law, and in defending the interests of Ireland and the EU."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20201006-0900-PLENARY-en_20201006-10:44:31_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20201006-0900-PLENARY-en_20201006-10:44:31_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20201006-0900-PLENARY-en_20201006-10:44:31_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20201006-0900-PLENARY-en_20201006-10:44:31_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20201006-0900-PLENARY-en_20201006-10:44:31_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VoxPopuli Sample 8 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 08</div>
+                <div class="sample-text">"How deeply audit companies are also involved."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/20201007-0900-PLENARY-en_20201007-15:36:39_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/20201007-0900-PLENARY-en_20201007-15:36:39_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/20201007-0900-PLENARY-en_20201007-15:36:39_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/20201007-0900-PLENARY-en_20201007-15:36:39_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/20201007-0900-PLENARY-en_20201007-15:36:39_4.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech-Test Section -->
+            <div class="dataset-section fade-in" style="margin-top: 60px;">
+                <div class="dataset-header">
+                    <span class="dataset-badge gigaspeech">GigaSpeech-Test</span>
+                    <span class="dataset-count"></span>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 1 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 01</div>
+                <div class="sample-text">"Any game with dice and numbered squares, the better their basic math skills get."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/POD1000000011_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/POD1000000011_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/POD1000000011_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/POD1000000011_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/POD1000000011_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 2 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 02</div>
+                <div class="sample-text">"They attempt at disguising the truth is so clumsy that it even presents another possibility."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/POD1000000019_S0000367.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/POD1000000019_S0000367.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/POD1000000019_S0000367.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/POD1000000019_S0000367.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/POD1000000019_S0000367.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 3 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 03</div>
+                <div class="sample-text">"To disentangle our various inputs."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/POD1000000024_S0000197.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/POD1000000024_S0000197.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/POD1000000024_S0000197.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/POD1000000024_S0000197.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/POD1000000024_S0000197.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 4 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 04</div>
+                <div class="sample-text">"Made in partnership with radiotopia."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/POD1000000024_S0000227.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/POD1000000024_S0000227.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/POD1000000024_S0000227.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/POD1000000024_S0000227.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/POD1000000024_S0000227.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 5 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 05</div>
+                <div class="sample-text">"Is a whole lot of different stages."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/POD1000000032_S0000045.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/POD1000000032_S0000045.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/POD1000000032_S0000045.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/POD1000000032_S0000045.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/POD1000000032_S0000045.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 6 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 06</div>
+                <div class="sample-text">"Election and so I I think like six thirty that night ah saturday night when I woke up and I was like a shit they had actually called this."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/POD1000000042_S0000467.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/POD1000000042_S0000467.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/POD1000000042_S0000467.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/POD1000000042_S0000467.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/POD1000000042_S0000467.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 7 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 07</div>
+                <div class="sample-text">"From the personal computers of that day."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/YOU1000000102_S0000029.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/YOU1000000102_S0000029.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/YOU1000000102_S0000029.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/YOU1000000102_S0000029.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/YOU1000000102_S0000029.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 8 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 08</div>
+                <div class="sample-text">"You've got to find what you love and that is as true for work as it is for your lovers."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/YOU1000000102_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/YOU1000000102_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/YOU1000000102_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/YOU1000000102_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/YOU1000000102_S0000178.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 9 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 09</div>
+                <div class="sample-text">"Basically income needs to grow faster than debt grows."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/YOU1000000115_S0000280.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/YOU1000000115_S0000280.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/YOU1000000115_S0000280.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/YOU1000000115_S0000280.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/YOU1000000115_S0000280.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 10 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 10</div>
+                <div class="sample-text">"Information about the books that I'm looking at, information about where I'm going because I'm typing it into Google Maps."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/YOU1000000134_S0000191.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/YOU1000000134_S0000191.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/YOU1000000134_S0000191.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/YOU1000000134_S0000191.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/YOU1000000134_S0000191.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GigaSpeech Sample 11 -->
+            <div class="sample-card fade-in">
+                <div class="sample-number">Sample 11</div>
+                <div class="sample-text">"One of the most important bastions of the church."</div>
+                <div class="audio-grid">
+                    <div class="audio-item ground-truth">
+                        <div class="audio-label">Ground Truth</div>
+                        <audio controls preload="none">
+                            <source src="ref/YOU1000000137_S0000397.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item ours">
+                        <div class="audio-label">Ours <span class="tag">Proposed</span></div>
+                        <audio controls preload="none">
+                            <source src="ours/YOU1000000137_S0000397.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">StyleTTS2</div>
+                        <audio controls preload="none">
+                            <source src="styletts2/YOU1000000137_S0000397.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech/YOU1000000137_S0000397.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                    <div class="audio-item">
+                        <div class="audio-label">FluentSpeech-Up</div>
+                        <audio controls preload="none">
+                            <source src="fluentspeech_up/YOU1000000137_S0000397.wav" type="audio/wav">
+                        </audio>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Downstream TTS & preference test -->
+    <section>
+        <div class="container">
+            <span class="section-label">Downstream Results</span>
+            <h2>TTS &amp; Preference Test</h2>
+
+            <div class="supp-content fade-in">
+                <p>In the downstream TTS setup, the proposed model yields <strong>18.5% higher AutoPCP</strong> than the best baseline (and better SECS), indicating that it transfers prosody better. WER is not improved over the other TTS approaches, which may be because those models are trained with full spectrogram-based losses, whereas the proposed approach models only prosody during pre-training and may omit spectral cues needed for low WERs. The proposed model nevertheless has the advantage of being task-agnostic and is not fine-tuned specifically for TTS.</p>
+
+                <p>Two ABX surveys were run on Prolific, one on the GigaSpeech test set and one on the VoxPopuli-EN test set, each with 40 native English listeners. Listeners judged whether the proposed method or a baseline was more prosodically similar to the ground truth. The proposed model is significantly preferred over FluentSpeech and StyleTTS2 on both test sets. Against FluentSpeech-Up, which is trained on 10&times; the data with 3&times; the parameters, the proposed model is significantly preferred on VoxPopuli, while on GigaSpeech the preference rate does not differ significantly from chance. The proposed model therefore surpasses the baselines trained under comparable conditions and remains competitive with a substantially larger system.</p>
+            </div>
+
+            <div class="figure-container fade-in">
+                <img src="figures/figure9.png" alt="ABX preference scores against the baselines">
+                <p class="figure-caption"><strong>Fig. 9:</strong> ABX preference scores of the proposed prosody model against the baselines using GigaSpeech (Giga.), VoxPopuli (Vox.), and the combined (Comb.) test sets. The green/red/gray colors denote Proposed/Baseline/Neutral, respectively. Neutral indicates that A and B are equally similar to the ground-truth speech. &ldquo;*&rdquo; flags statistical insignificance (BH-adjusted <em>p</em>&nbsp;&gt;&nbsp;0.05). Tests are on the neutral-excluded preference rate, whereas the bars include neutral responses. The combined bars pool the two test sets, are not independent of the other two rows, and are excluded from the correction family; they carry no marker.</p>
+            </div>
+
+            <h2 style="margin-top: 48px;">Emotion Recognition</h2>
+            <div class="supp-content fade-in">
+                <p>On speaker- and text-disjoint emotion recognition (arousal, valence, dominance) on IEMOCAP, the proposed model&mdash;never trained on emotional speech or emotion labels&mdash;reaches <strong>0.595 mean CCC</strong>, above both the raw prosody signals (0.501) and eGeMAPS (0.518), significantly on all three dimensions (BH-adjusted <em>p</em>&nbsp;&le;&nbsp;0.02).</p>
+
+                <p>Fusing the proposed prosody embeddings with a self-supervised backbone increases mean CCC for every backbone, and more than raw prosody or eGeMAPS features do. The gains are significant on valence for all seven backbones and on dominance for six, but on arousal for only two (e.g. +0.021/+0.020 on valence/dominance for WavLM-base against +0.007 on arousal), which suggests that arousal is largely already captured by SSLs unlike valence and dominance. Gains over task-supervised backbones are smaller on average but still significant, and give the two highest mean CCC values overall.</p>
+            </div>
+
+            <h2 style="margin-top: 48px;">Word Prominence Detection</h2>
+            <div class="supp-content fade-in">
+                <p>For 2-class word prominence, the frozen latent embeddings of the proposed model with a single learned linear layer reach <strong>0.856 accuracy</strong>, above the raw prosody features that the model itself takes as input (0.843) and above BERT-base (0.802); both margins are significant under a paired speaker-clustered bootstrap (BH-adjusted <em>p</em>&nbsp;&lt;&nbsp;0.001). This indicates that the learned representation encodes more than the raw prosody values can capture, and that these labels are only partially recoverable from lexical content.</p>
+
+                <p>Late fusion improves every backbone, and the best system overall is a fusion (0.881 accuracy for Whisper-large-v3&nbsp;+&nbsp;Proposed). The improvement is largest for the weakest backbone (wav2vec2-base, +0.021) and decreases to +0.005&ndash;0.009 for stronger backbones. As in emotion recognition, this indicates that SSL backbones&mdash;even with task supervision and more scaling&mdash;can still lack prosodic information that is useful for prosody-related downstream tasks.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Temporal alignment analysis -->
+    <section>
+        <div class="container">
+            <span class="section-label">Analysis</span>
+            <h2>Effect of SAL and S-ROPE on Temporal Alignment</h2>
+
+            <div class="supp-content fade-in">
+                <p>Perceiver-style encoders represent variable-length inputs using a fixed set of learnable latents (queries). Because these latents are not inherently tied to specific time indices, their cross-attention to text and acoustic prosody features may be weakly structured or temporally inconsistent. To encourage temporally coherent alignments, <strong>Soft Alignment Loss (SAL)</strong> and <strong>summary rotary positional embeddings (S-ROPE)</strong> are applied to the model's cross-attention layers, including those involving the fixed-length prosody latents.</p>
+
+                <p>Temporal alignment is visualized using heatmaps of cross-attention weights for a sample from GigaSpeech-Dev. As shown in Figs.&nbsp;3&ndash;6, the full model (SAL&nbsp;+&nbsp;S-ROPE) exhibits a more pronounced diagonal structure, consistent with improved temporal alignment between (i) text and prosody latents and (ii) acoustic prosody features and prosody latents.</p>
+
+                <h3>F0/Energy Decoder</h3>
+                <p>Fig.&nbsp;3 shows the cross-attention between the length-regulated (LR) text sequence (with speaker embedding) and the fixed-length prosody embeddings. In this example, the full model displays a clearer diagonal trend than the ablations. Removing SAL produces a larger qualitative degradation than removing S-ROPE, which may be because SAL directly regularizes cross-attention toward a diagonal prior, whereas S-ROPE provides a positional inductive bias. Fig.&nbsp;4 shows a similar trend for cross-attention between the acoustic prosody input and the fixed-length prosody embeddings in the F0/Energy decoder.</p>
+
+                <h3>Duration Decoder</h3>
+                <p>Fig.&nbsp;5 shows cross-attention between the text (with speaker embedding) and the fixed-length prosody embeddings in the duration decoder. The full model again shows more structured attention. Interestingly, multiple diagonal bands are observed, which suggests that alignment remains broadly monotonic but is split into several locally monotonic regions (groups of prosody latents attend to successive text spans with small offsets) rather than forming one continuous diagonal as in the F0/Energy Decoder.</p>
+
+                <h3>Prosody Encoder</h3>
+                <p>Fig.&nbsp;6 shows encoder cross-attention between the learnable prosody queries and the acoustic prosody input. In this example, the second half of the utterance/prosody input is masked; correspondingly, the diagonal trend is primarily visible in the unmasked region (most clearly in the log-scaled, contrast-enhanced visualization).</p>
+
+                <h3>Correspondence Between Latent Index and Predicted F0 Frame</h3>
+                <p>The cross-attention maps show where the model attends to; a masking probe additionally tests <em>which</em> part of the predicted F0 each prosody latent controls. One contiguous group of latents is masked at a time in the F0/Energy Decoder cross-attention (18 groups of about 14 latents, each covering about 330&nbsp;ms in a six-second sentence), with text, speaker embedding, and ground-truth durations held fixed. The fixed-length prosody embeddings achieve <strong>&rho;&nbsp;=&nbsp;0.96</strong> (ordering) and <strong>&kappa;&nbsp;=&nbsp;0.46</strong> (localization), a clear diagonalization. Without SAL the ordering survives (&rho;&nbsp;=&nbsp;0.89) but the locality spreads across the utterance (&kappa;&nbsp;=&nbsp;0.21); without S-ROPE the ordering itself breaks down (&rho;&nbsp;=&nbsp;0.61). The two mechanisms are therefore complementary: S-ROPE ties each latent index to an output frame position, whereas SAL concentrates the influence of that latent around this position.</p>
+            </div>
+
+            <div class="supp-figures fade-in">
+                <div class="supp-figure">
+                    <img src="figures/figure3.png" alt="F0/Energy Decoder cross-attention {LR Text + Speaker Embedding, Prosody Embedding}">
+                    <p class="supp-figure-caption"><strong>Fig. 3:</strong> F0/Energy Decoder cross-attention {LR Text + Speaker Embedding, Prosody Embedding}. Left to right: proposed model, proposed model without SAL, proposed model without S-ROPE, respectively.</p>
+                </div>
+
+                <div class="supp-figure">
+                    <img src="figures/figure4.png" alt="F0/Energy Decoder cross-attention {Prosody Input, Prosody Embedding}">
+                    <p class="supp-figure-caption"><strong>Fig. 4:</strong> F0/Energy Decoder cross-attention {Prosody Input, Prosody Embedding}. Left to right: proposed model, proposed model without SAL, proposed model without S-ROPE, respectively.</p>
+                </div>
+
+                <div class="supp-figure">
+                    <img src="figures/figure5.png" alt="Duration Decoder cross-attention">
+                    <p class="supp-figure-caption"><strong>Fig. 5:</strong> Duration Decoder cross-attention {Text + Speaker Embedding, Prosody Embedding}. Left to right: proposed model, proposed model without SAL, proposed model without S-ROPE, respectively.</p>
+                </div>
+
+                <div class="supp-figure">
+                    <img src="figures/figure6.png" alt="Encoder cross-attention">
+                    <p class="supp-figure-caption"><strong>Fig. 6:</strong> Encoder cross-attention {Learnable Prosody Query, Prosody Input}. Left to right: proposed model, proposed model without SAL, proposed model without S-ROPE. The upper row shows raw attention weights; the lower row is log-scaled and contrast enhanced for visibility.</p>
+                </div>
+
+                <div class="supp-figure">
+                    <img src="figures/figure7.png" alt="Temporal alignment between prosody latents and predicted F0">
+                    <p class="supp-figure-caption"><strong>Fig. 7:</strong> Temporal alignment between the prosody latents and the predicted F0, measured by iteratively masking contiguous blocks (14 latents per group) in the F0/Energy Decoder cross-attention. Cell (<em>l</em>,&nbsp;<em>t</em>) is the response at frame <em>t/T</em> to masking the group at <em>l/L</em>; rows sum to one, and the dashed line marks the target diagonal. &rho; is the Spearman correlation between the masked group index and the center of mass of its response (ordering); &kappa; is the fraction of the response within &plusmn;1 bin of the diagonal (localization). Left to right: proposed model, proposed model without SAL, proposed model without S-ROPE.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>© 2026 · Submitted to Speech Communication (Elsevier)</p>
+            <p style="margin-top: 8px;">Eray Eren, Qingju Liu, Hyeongwoo Kim, Pablo Garrido, Abeer Alwan</p>
+        </div>
+    </footer>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
+
